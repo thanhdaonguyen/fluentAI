@@ -1,0 +1,187 @@
+/* Global Styles */
+.App {
+  text-align: center;
+}
+
+/* Ant Design Overrides */
+.ant-layout {
+  background: #f0f2f5;
+}
+
+.ant-layout-header {
+  height: 64px;
+  padding: 0 24px;
+  line-height: 64px;
+}
+
+.ant-menu-horizontal {
+  border-bottom: none;
+}
+
+/* Card Animations */
+.ant-card {
+  transition: all 0.3s ease;
+}
+
+.ant-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Button Animations */
+.ant-btn {
+  transition: all 0.3s ease;
+}
+
+.ant-btn-primary:hover {
+  transform: scale(1.05);
+}
+
+/* Progress Animations */
+.ant-progress-circle {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Speech Text Display */
+.speech-text-display {
+  font-size: 18px;
+  line-height: 1.8;
+  min-height: 120px;
+  padding: 16px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  text-align: left;
+}
+
+/* Audio Visualizer Canvas */
+canvas {
+  border-radius: 8px;
+  background: #f0f0f0;
+}
+
+/* Tag Styles */
+.ant-tag {
+  margin: 4px;
+  padding: 4px 12px;
+  font-size: 14px;
+}
+
+/* Timeline Styles */
+.ant-timeline-item-content {
+  padding-bottom: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .ant-layout-header {
+    padding: 0 16px;
+  }
+  
+  .ant-card {
+    margin-bottom: 16px;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Loading Animation */
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: #4A90E2;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Child-Friendly Colors */
+.success-color {
+  color: #52c41a;
+}
+
+.warning-color {
+  color: #faad14;
+}
+
+.error-color {
+  color: #ff4d4f;
+}
+
+/* Exercise Card Hover Effects */
+.exercise-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.exercise-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Modal Styles */
+.ant-modal-content {
+  border-radius: 12px;
+}
+
+.ant-modal-header {
+  border-radius: 12px 12px 0 0;
+}
+
+/* Navigation Logo */
+.app-logo {
+  font-size: 24px;
+  font-weight: bold;
+  color: #4A90E2;
+  margin-right: 40px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Feedback Animation */
+.feedback-card {
+  animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
