@@ -22,7 +22,7 @@ const DAFPage: React.FC = () => {
     const [isListening, setIsListening] = useState(false);
     const [speakingScore, setSpeakingScore] = useState(0);
     const [sessionData, setSessionData] = useState<SessionData>({
-        stutteredWords: [],
+        stutteredWords: [], // Common filler words
         totalWords: 0,
         stutterCount: 0,
         sessionDuration: 0,
@@ -32,6 +32,7 @@ const DAFPage: React.FC = () => {
     const startTimeRef = useRef<number>(0);
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [isInitializing, setIsInitializing] = useState(false);
+
 
     const handleStart = async () => {
         setIsInitializing(true);
@@ -49,7 +50,7 @@ const DAFPage: React.FC = () => {
             setSpeakingScore(0);
             startTimeRef.current = Date.now();
             setSessionData({
-                stutteredWords: [],
+                stutteredWords: ["um", "uh", "like", "you know"],
                 totalWords: 0,
                 stutterCount: 0,
                 sessionDuration: 0,
@@ -61,14 +62,9 @@ const DAFPage: React.FC = () => {
         } finally {
             setIsInitializing(false);
         }
+
     };
 
-    const calculateFinalScore = useCallback(() => {
-        if (sessionData.totalWords === 0) return 100;
-        const stutterRate =
-            (sessionData.stutterCount / sessionData.totalWords) * 100;
-        return Math.max(0, Math.round(100 - stutterRate * 2));
-    }, [sessionData.totalWords, sessionData.stutterCount]);
 
     const handleStop = useCallback (() => {
         if(stream) {
@@ -100,7 +96,16 @@ const DAFPage: React.FC = () => {
         
     }, [stream, sessionData, calculateFinalScore]);
 
-    
+
+    const calculateFinalScore = useCallback(() => {
+//         if (sessionData.totalWords === 0) return 100;
+//         const stutterRate =
+//             (sessionData.stutterCount / sessionData.totalWords) * 100;
+//         return Math.max(0, Math.round(100 - stutterRate * 2));
+        return Math.ceil(Math.random() * 100); // Placeholder for random score generation
+    }, [sessionData.totalWords, sessionData.stutterCount]);
+
+
 
     const updateSessionData = useCallback((data: Partial<SessionData>) => {
         setSessionData((prev) => ({ ...prev, ...data }));
