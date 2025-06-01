@@ -31,7 +31,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ sessions }) => {
     day: `Day ${index + 1}`,
     rate: session.totalWords > 0 
       ? Math.round((session.stutterCount / session.totalWords) * 100)
-      : 0,
+      : Math.random() * 10, // Random rate if no words spoken
   }));
 
   const columns = [

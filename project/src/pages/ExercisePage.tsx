@@ -19,7 +19,7 @@ const ExercisePage: React.FC = () => {
     : 0;
 
   const chartData = recentSessions.map((session: any, index: number) => ({
-    session: `Session ${index + 1}`,
+    session: `Session ${index + 1 + sessions.length - recentSessions.length}`,
     score: session.finalScore,
   }));
 
@@ -54,32 +54,79 @@ const ExercisePage: React.FC = () => {
               </Card>
             </Col>
             <Col xs={12} sm={6}>
-              <Card>
+                <Card>
                 <Statistic
                   title="Practice Streak"
-                  value={3}
+                  value={
+                  (() => {
+                    // Get unique days with at least one session
+                    const days = Array.from(
+                    new Set(
+                      sessions.map((s: any) => {
+                      const d = new Date(s.timestamp);
+                      return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+                      })
+                    )
+                    
+                    ) as string[];
+                      days.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+                      // console.log(days);
+                      // console.log(new Date(days[2])); 
+                    
+                    let streak = 0;
+                    let current = new Date();
+                    current.setHours(0, 0, 0, 0); // Normalize to midnight
+                    for (let i = 0; i < days.length; i++) {
+                      const [y, m, d] = days[i].split('-').map(Number);
+                      const dayDate = new Date(y, m - 1, d); // Month is 0-indexed
+                      dayDate.setHours(0, 0, 0, 0); // Normalize to midnight
+                      if (current.getTime() === dayDate.getTime()) {
+                        streak++;
+                        // Move to previous day
+                        current.setDate(current.getDate() - 1);
+                      } else {
+                        break;
+                      }
+                    }
+                    return streak;
+                  })()
+                  }
                   suffix="days"
                   prefix={<RiseOutlined />}
                   valueStyle={{ color: '#1890ff' }}
                 />
-              </Card>
+                </Card>
             </Col>
             <Col xs={12} sm={6}>
-              <Card>
-                <Statistic
-                  title="Today's Practice"
-                  value={15}
-                  suffix="min"
-                  prefix={<ClockCircleOutlined />}
-                />
-              </Card>
+                <Card>
+                  <Statistic
+                    title="Total time of today's DAF"
+                    value={
+                      Math.round(
+                        sessions
+                          .filter((s: any) => {
+                            const sessionDate = new Date(s.timestamp);
+                            const today = new Date();
+                            return (
+                              sessionDate.getFullYear() === today.getFullYear() &&
+                              sessionDate.getMonth() === today.getMonth() &&
+                              sessionDate.getDate() === today.getDate()
+                            );
+                          })
+                          .reduce((acc: number, s: any) => acc + (s.sessionDuration || 0), 0) / 60
+                      )
+                    }
+                    suffix="min"
+                    prefix={<ClockCircleOutlined />}
+                  />
+                </Card>
             </Col>
           </Row>
         </Col>
 
         {/* Progress Chart */}
         <Col xs={24} lg={16}>
-          <Card title="Progress Over Time">
+          <Card title="Progress Over Time (10 latest sessions)">
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />

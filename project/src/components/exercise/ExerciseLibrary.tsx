@@ -1,11 +1,21 @@
 import React, { useState } from 'react';
 import { Card, Row, Col, Typography, Button, Tag, Space, Progress, Modal } from 'antd';
 import { PlayCircleOutlined, LockOutlined, StarOutlined } from '@ant-design/icons';
+import BreathingExercise from './BreathingExercise';
+import SlowReadingExercise from './SlowReadingExercise';
+import RhythmExercise from './RhythmExercise';
+import ConversationExercise from './ConversationExercise';
+import WordStretchingExercise from './WordStretchingExercise';
 
 const { Title, Text } = Typography;
 
 const ExerciseLibrary: React.FC = () => {
   const [selectedExercise, setSelectedExercise] = useState<any>(null);
+  const [showBreathingExercise, setShowBreathingExercise] = useState(false);
+  const [showReadingExercise, setShowReadingExercise] = useState(false);
+  const [showRhythmExercise, setShowRhythmExercise] = useState(false);
+  const [showConversationExercise, setShowConversationExercise] = useState(false);
+  const [showStretchingExercise, setShowStretchingExercise] = useState(false);
 
   const exercises = [
     {
@@ -99,8 +109,44 @@ const ExerciseLibrary: React.FC = () => {
 
   const handleExerciseClick = (exercise: any) => {
     if (!exercise.locked) {
-      setSelectedExercise(exercise);
+      switch(exercise.id) {
+        case 1:
+          setShowBreathingExercise(true);
+          break;
+        case 2:
+          setShowReadingExercise(true);
+          break;
+        case 3:
+          setShowRhythmExercise(true);
+          break;
+        case 4:
+          setShowConversationExercise(true);
+          break;
+        case 6:
+          setShowStretchingExercise(true);
+          break;
+        default:
+          setSelectedExercise(exercise);
+      }
     }
+  };
+
+  const handleExerciseComplete = (exerciseId: number, score: number) => {
+    // Update exercise progress
+    const sessions = JSON.parse(localStorage.getItem('exerciseSessions') || '[]');
+    sessions.push({
+      exerciseId: exerciseId,
+      score: score,
+      timestamp: new Date().toISOString(),
+    });
+    localStorage.setItem('exerciseSessions', JSON.stringify(sessions));
+    
+    // Close the exercise modal
+    setShowBreathingExercise(false);
+    setShowReadingExercise(false);
+    setShowRhythmExercise(false);
+    setShowConversationExercise(false);
+    setShowStretchingExercise(false);
   };
 
   return (
@@ -160,6 +206,61 @@ const ExerciseLibrary: React.FC = () => {
       </Card>
 
       <Modal
+        title="Deep Breathing Exercise"
+        open={showBreathingExercise}
+        onCancel={() => setShowBreathingExercise(false)}
+        footer={null}
+        width={800}
+        destroyOnClose
+      >
+        <BreathingExercise onComplete={(score) => handleExerciseComplete(1, score)} />
+      </Modal>
+
+      <Modal
+        title="Slow Reading Exercise"
+        open={showReadingExercise}
+        onCancel={() => setShowReadingExercise(false)}
+        footer={null}
+        width={900}
+        destroyOnClose
+      >
+        <SlowReadingExercise onComplete={(score) => handleExerciseComplete(2, score)} />
+      </Modal>
+
+      <Modal
+        title="Rhythm and Beats Exercise"
+        open={showRhythmExercise}
+        onCancel={() => setShowRhythmExercise(false)}
+        footer={null}
+        width={900}
+        destroyOnClose
+      >
+        <RhythmExercise onComplete={(score) => handleExerciseComplete(3, score)} />
+      </Modal>
+
+      <Modal
+        title="Conversation Practice"
+        open={showConversationExercise}
+        onCancel={() => setShowConversationExercise(false)}
+        footer={null}
+        width={900}
+        destroyOnClose
+      >
+        <ConversationExercise onComplete={(score) => handleExerciseComplete(4, score)} />
+      </Modal>
+
+      <Modal
+        title="Word Stretching Exercise"
+        open={showStretchingExercise}
+        onCancel={() => setShowStretchingExercise(false)}
+        footer={null}
+        width={900}
+        destroyOnClose
+      >
+        <WordStretchingExercise onComplete={(score) => handleExerciseComplete(6, score)} />
+      </Modal>
+
+      <Modal
         title={selectedExercise?.title}
         open={!!selectedExercise}
         onCancel={() => setSelectedExercise(null)}
@@ -167,8 +268,8 @@ const ExerciseLibrary: React.FC = () => {
           <Button key="cancel" onClick={() => setSelectedExercise(null)}>
             Close
           </Button>,
-          <Button key="start" type="primary" icon={<PlayCircleOutlined />}>
-            Start Exercise
+          <Button key="start" type="primary" icon={<PlayCircleOutlined />} disabled>
+            Coming Soon
           </Button>,
         ]}
       >
@@ -192,8 +293,7 @@ const ExerciseLibrary: React.FC = () => {
               <Text strong>Instructions:</Text>
               <br />
               <Text>
-                This exercise will guide you through specific techniques to improve your speech fluency. 
-                Follow the on-screen prompts and practice at your own pace.
+                This exercise is coming soon! Check back later for updates.
               </Text>
             </div>
           </Space>

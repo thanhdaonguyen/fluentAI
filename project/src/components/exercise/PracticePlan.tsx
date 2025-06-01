@@ -10,7 +10,7 @@ const PracticePlan: React.FC = () => {
       time: '10:00 AM',
       activity: 'Breathing Exercises',
       duration: '5 min',
-      completed: true,
+      completed: false,
       type: 'breathing',
     },
     {
@@ -30,8 +30,8 @@ const PracticePlan: React.FC = () => {
   ];
 
   const weeklyGoal = {
-    target: 150, // minutes
-    completed: 95,
+    target: 15, // minutes
+    completed: 9,
   };
 
   const getActivityColor = (type: string) => {

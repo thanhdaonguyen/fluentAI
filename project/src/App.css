@@ -170,18 +170,22 @@ canvas {
   align-items: center;
 }
 
-/* Feedback Animation */
-.feedback-card {
-  animation: slideIn 0.5s ease-out;
+/* Pulse Animation for Audio Indicator */
+.pulse-animation {
+  animation: pulse 1.5s ease-in-out infinite;
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
+@keyframes pulse {
+  0% {
+    transform: scale(1);
     opacity: 1;
-    transform: translateY(0);
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
   }
 }
