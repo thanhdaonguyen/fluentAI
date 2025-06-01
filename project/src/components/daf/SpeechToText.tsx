@@ -12,7 +12,7 @@ interface SpeechToTextProps {
 const SpeechToText: React.FC<SpeechToTextProps> = ({ isListening, onDataUpdate }) => {
   const [transcript, setTranscript] = useState('');
   const [interimText, setInterimText] = useState('');
-  const [stutteredWords, setStutteredWords] = useState<Set<string>>(new Set());
+  const [stutteredWords, setStutteredWords] = useState<Set<string>>(new Set(['um', 'uh', 'like', 'you know'])); // Common filler words
   const recognitionRef = useRef<any>(null);
   const totalWordsRef = useRef(0);
   const totalStuttersRef = useRef(0);
@@ -63,7 +63,9 @@ const SpeechToText: React.FC<SpeechToTextProps> = ({ isListening, onDataUpdate }
         
         // Enhanced stutter detection
         const words = finalTranscript.trim().split(/\s+/).filter(w => w.length > 0);
-        const detectedStutters = new Set<string>();
+          const detectedStutters = new Set<string>();
+          
+        
         let stutterCount = 0;
 
         words.forEach((word, index) => {
