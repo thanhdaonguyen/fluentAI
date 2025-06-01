@@ -3,38 +3,62 @@ import { Card } from 'antd';
 
 interface AudioVisualizerProps {
   isActive: boolean;
+  stream: MediaStream | null;
 }
 
-const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ isActive }) => {
+const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ isActive, stream }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const dataArrayRef = useRef<Uint8Array | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
 
   useEffect(() => {
-    if (!isActive) {
+    const cleanup = () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
       }
+
+      if(sourceRef.current && analyserRef.current) {
+        sourceRef.current.disconnect();
+      }
+
+      if (audioContextRef.current?.state !== 'closed') {
+        audioContextRef.current?.close();
+      }
+      analyserRef.current = null;
+      sourceRef.current = null;
+      audioContextRef.current = null;
+    };
+
+    if (!isActive || !stream) {
+      cleanup();
       return;
     }
 
     const setupAudio = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const source = audioContext.createMediaStreamSource(stream);
-        const analyser = audioContext.createAnalyser();
+        // const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (!audioContextRef.current) {
+          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+        
+        const analyser = audioContextRef.current.createAnalyser();
+        const source = audioContextRef.current.createMediaStreamSource(stream);
         
         analyser.fftSize = 2048;
         source.connect(analyser);
         
         analyserRef.current = analyser;
+        sourceRef.current = source;
         dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount);
         
         draw();
       } catch (error) {
         console.error('Error accessing microphone:', error);
+        cleanup();
       }
     };
 
@@ -82,11 +106,9 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ isActive }) => {
     setupAudio();
 
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
+      cleanup();
     };
-  }, [isActive]);
+  }, [isActive, stream]);
 
   return (
     <Card title="Audio Waveform" size="small">

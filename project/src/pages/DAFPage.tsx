@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
     Card,
     Button,
@@ -30,23 +30,47 @@ const DAFPage: React.FC = () => {
     });
     const [showFeedback, setShowFeedback] = useState(false);
     const startTimeRef = useRef<number>(0);
+    const [stream, setStream] = useState<MediaStream | null>(null);
+    const [isInitializing, setIsInitializing] = useState(false);
 
-    const handleStart = () => {
-        setIsListening(true);
-        setShowFeedback(false);
-        setSpeakingScore(0);
-        startTimeRef.current = Date.now();
-        setSessionData({
-            stutteredWords: ["um", "uh", "like", "you know"],
-            totalWords: 0,
-            stutterCount: 0,
-            sessionDuration: 0,
-            finalScore: 0,
-        });
-        message.success("Listening started! Speak naturally.");
+
+    const handleStart = async () => {
+        setIsInitializing(true);
+        try {
+            const newStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: false,
+                },
+            });
+            setStream(newStream);
+            setIsListening(true);
+            setShowFeedback(false);
+            setSpeakingScore(0);
+            startTimeRef.current = Date.now();
+            setSessionData({
+                stutteredWords: ["um", "uh", "like", "you know"],
+                totalWords: 0,
+                stutterCount: 0,
+                sessionDuration: 0,
+                finalScore: 0,
+            });
+            message.success("Listening started! Speak naturally.");
+        } catch (error) {
+            console.error("Error accessing microphone:", error);
+        } finally {
+            setIsInitializing(false);
+        }
+
     };
 
-    const handleStop = () => {
+
+    const handleStop = useCallback (() => {
+        if(stream) {
+            stream.getTracks().forEach((track) => track.stop());
+            setStream(null);
+        }
         setIsListening(false);
         const duration = (Date.now() - startTimeRef.current) / 1000;
         const finalScore = calculateFinalScore();
@@ -69,26 +93,38 @@ const DAFPage: React.FC = () => {
             timestamp: new Date().toISOString(),
         });
         localStorage.setItem("sessions", JSON.stringify(sessions));
-    };
+        
+    }, [stream, sessionData, calculateFinalScore]);
 
-    const calculateFinalScore = () => {
-        // if (sessionData.totalWords === 0) return 100;
-        // const stutterRate =
-        //     (sessionData.stutterCount / sessionData.totalWords) * 100;
-        // return Math.max(0, Math.round(100 - stutterRate * 2));
+
+    const calculateFinalScore = useCallback(() => {
+//         if (sessionData.totalWords === 0) return 100;
+//         const stutterRate =
+//             (sessionData.stutterCount / sessionData.totalWords) * 100;
+//         return Math.max(0, Math.round(100 - stutterRate * 2));
         return Math.ceil(Math.random() * 100); // Placeholder for random score generation
-    };
+    }, [sessionData.totalWords, sessionData.stutterCount]);
 
-    const updateSessionData = (data: Partial<SessionData>) => {
+
+
+    const updateSessionData = useCallback((data: Partial<SessionData>) => {
         setSessionData((prev) => ({ ...prev, ...data }));
-    };
+    }, []);
 
     useEffect(() => {
-        if (isListening && sessionData.totalWords > 0) {
+        return () => {
+            if (stream) {
+                stream.getTracks().forEach((track) => track.stop());
+            }
+        }
+    }, [stream]);
+
+    useEffect(() => {
+        if(isListening && sessionData.totalWords > 0) {
             const currentScore = calculateFinalScore();
             setSpeakingScore(currentScore);
         }
-    }, [sessionData.totalWords, sessionData.stutterCount, isListening]);
+    }, [sessionData.totalWords, sessionData.stutterCount, isListening, calculateFinalScore]);
 
     return (
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
@@ -118,6 +154,8 @@ const DAFPage: React.FC = () => {
                                     onClick={
                                         isListening ? handleStop : handleStart
                                     }
+                                    loading={isInitializing}
+                                    disabled={isInitializing}
                                     style={{
                                         height: 80,
                                         width: 200,
@@ -129,12 +167,13 @@ const DAFPage: React.FC = () => {
                                 </Button>
                             </div>
 
-                            {isListening && (
+                            {isListening && stream && (
                                 <>
-                                    <AudioVisualizer isActive={isListening} />
+                                    <AudioVisualizer isActive={isListening} stream={stream}/>
                                     <DAFProcessor
                                         isActive={isListening}
                                         delay={150}
+                                        stream={stream}
                                     />
                                 </>
                             )}

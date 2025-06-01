@@ -6,95 +6,87 @@ const { Text } = Typography;
 interface DAFProcessorProps {
   isActive: boolean;
   delay: number;
+  stream: MediaStream | null;
 }
 
-const DAFProcessor: React.FC<DAFProcessorProps> = ({ isActive, delay: initialDelay }) => {
+const DAFProcessor: React.FC<DAFProcessorProps> = ({ isActive, delay: initialDelay , stream}) => {
   const [delay, setDelay] = useState(initialDelay);
   const [volume, setVolume] = useState(0.7);
   const [isEnabled, setIsEnabled] = useState(true);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const delayNodeRef = useRef<DelayNode | null>(null);
-  const gainNodeRef = useRef<GainNode | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const nodesRef = useRef<{ source: MediaStreamAudioSourceNode | null, delay: DelayNode | null, gain: GainNode | null }>({
+    source: null,
+    delay: null,
+    gain: null,
+  });
 
   useEffect(() => {
-    if (!isActive || !isEnabled) {
-      // Clean up audio when stopping
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
+    const cleanup = () => {
+      const { source, delay, gain } = nodesRef.current;
+      source?.disconnect();
+      delay?.disconnect();
+      gain?.disconnect();
+      
+      if (audioContextRef.current?.state !== 'closed') {
+        audioContextRef.current?.close();
       }
-      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-        audioContextRef.current.close();
-      }
+      
+      nodesRef.current = { source: null, delay: null, gain: null };
+      audioContextRef.current = null;
+    };
+    if (!isActive || !isEnabled || !stream ) {
+      cleanup();
       return;
     }
 
     const setupDAF = async () => {
       try {
-        // Get microphone input
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          audio: {
-            echoCancellation: false,
-            noiseSuppression: false,
-            autoGainControl: false,
-          } 
-        });
-        streamRef.current = stream;
+        if(!audioContextRef.current) {
+          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
 
-        // Create audio context
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        audioContextRef.current = audioContext;
+        if(!nodesRef.current.source) {
+          const source = audioContextRef.current.createMediaStreamSource(stream);
+          const delayNode = audioContextRef.current.createDelay(1); // Max 1 second delay
+          const gainNode = audioContextRef.current.createGain();
 
-        // Create nodes
-        const source = audioContext.createMediaStreamSource(stream);
-        const delayNode = audioContext.createDelay(1); // Max 1 second delay
-        const gainNode = audioContext.createGain();
+          nodesRef.current = { source, delay: delayNode, gain: gainNode };
 
-        // Set delay time (convert ms to seconds)
-        delayNode.delayTime.value = delay / 1000;
-        
-        // Set gain (volume)
-        gainNode.gain.value = volume;
+          source.connect(delayNode);
+          delayNode.connect(gainNode);
+          gainNode.connect(audioContextRef.current.destination);
+        }
 
-        // Connect nodes: source -> delay -> gain -> output
-        source.connect(delayNode);
-        delayNode.connect(gainNode);
-        gainNode.connect(audioContext.destination);
+        nodesRef.current.delay!.delayTime.value = delay / 1000;
+        nodesRef.current.gain!.gain.value = volume;
 
-        // Store references
-        sourceRef.current = source;
-        delayNodeRef.current = delayNode;
-        gainNodeRef.current = gainNode;
 
       } catch (error) {
         console.error('Error setting up DAF:', error);
+        cleanup();
       }
     };
 
     setupDAF();
 
     return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-        audioContextRef.current.close();
+      if (nodesRef.current.delay) {
+        nodesRef.current.delay.delayTime.value = delay / 1000;
       }
     };
-  }, [isActive, delay, volume, isEnabled]);
+  }, [isActive, isEnabled, stream, delay, volume]);
 
   // Update delay when it changes
   useEffect(() => {
-    if (delayNodeRef.current) {
-      delayNodeRef.current.delayTime.value = delay / 1000;
+    if (nodesRef.current.delay) {
+      nodesRef.current.delay.delayTime.value = delay / 1000;
     }
   }, [delay]);
 
   // Update volume when it changes
   useEffect(() => {
-    if (gainNodeRef.current) {
-      gainNodeRef.current.gain.value = volume;
+    if (nodesRef.current.gain) {
+      nodesRef.current.gain.gain.value = volume;
     }
   }, [volume]);
 
