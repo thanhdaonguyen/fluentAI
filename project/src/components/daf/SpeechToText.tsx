@@ -16,13 +16,22 @@ const SpeechToText: React.FC<SpeechToTextProps> = ({ isListening, onDataUpdate }
   const recognitionRef = useRef<any>(null);
   const totalWordsRef = useRef(0);
   const totalStuttersRef = useRef(0);
+  const isListeningRef = useRef(isListening);
+  const shouldRestartRef = useRef(false);
 
   useEffect(() => {
+    isListeningRef.current = isListening;
     if (!isListening) {
       if (recognitionRef.current) {
-        recognitionRef.current.stop();
+        recognitionRef.current.onend = null;
+        recognitionRef.current.abort();
       }
       setInterimText('');
+      return;
+    }
+
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+      console.error('Trình duyệt không hỗ trợ Web Speech API');
       return;
     }
 
@@ -42,8 +51,10 @@ const SpeechToText: React.FC<SpeechToTextProps> = ({ isListening, onDataUpdate }
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
+    recognition.maxAlternatives = 1;
 
     recognition.onresult = (event: any) => {
+      console.log('Nhận dạng:', event);
       let finalTranscript = '';
       let interim = '';
 
@@ -55,6 +66,7 @@ const SpeechToText: React.FC<SpeechToTextProps> = ({ isListening, onDataUpdate }
           interim += transcript;
         }
       }
+      console.log('Final transcript:', finalTranscript, 'Interim:', interim);
 
       setInterimText(interim);
 
@@ -111,10 +123,22 @@ const SpeechToText: React.FC<SpeechToTextProps> = ({ isListening, onDataUpdate }
     };
 
     recognition.onerror = (event: any) => {
+      if (event.error === 'aborted') return;
       console.error('Speech recognition error:', event.error);
       if (event.error === 'no-speech') {
+        shouldRestartRef.current = true;
         recognition.stop();
-        recognition.start();
+      }
+    };
+
+    recognition.onend = () => {
+      if (isListeningRef.current && shouldRestartRef.current) {
+        shouldRestartRef.current = false;
+        try {
+          recognition.start();
+        } catch (err) {
+          console.error('Recognition restart error:', err);
+        }
       }
     };
 
@@ -123,7 +147,9 @@ const SpeechToText: React.FC<SpeechToTextProps> = ({ isListening, onDataUpdate }
 
     return () => {
       if (recognitionRef.current) {
-        recognitionRef.current.stop();
+        // recognitionRef.current.stop();
+        recognitionRef.current.onend = null;
+        recognitionRef.current.abort();
       }
     };
   }, [isListening, onDataUpdate]);
